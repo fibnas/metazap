@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use image::io::Reader as ImageReader;
+use image::ImageReader;  // Fixed: Use direct image::ImageReader (no io::Reader alias)
 use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
@@ -28,15 +28,16 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    if args.input.exists().not() {
+    // Fixed: Use ! instead of .not()
+    if !args.input.exists() {
         anyhow::bail!("Input directory '{}' does not exist", args.input.display());
     }
 
-    let output_dir = args.output.as_ref().or(Some(&args.input));
-    if let Some(out) = &output_dir {
-        if out.exists().not() && !args.dry_run {
-            fs::create_dir_all(out).context("Failed to create output directory")?;
-        }
+    // Fixed: Use unwrap_or to get clean &PathBuf (avoids &&PathBuf mess)
+    let output_dir = args.output.as_ref().unwrap_or(&args.input);
+    // Fixed: Use ! instead of .not()
+    if !output_dir.exists() && !args.dry_run {
+        fs::create_dir_all(output_dir).context("Failed to create output directory")?;
     }
 
     let extensions: Vec<&str> = vec!["png", "jpg", "jpeg"];
@@ -60,14 +61,11 @@ fn main() -> Result<()> {
         let file_name = src_path.file_name().unwrap().to_str().unwrap();
         let ext = src_path.extension().unwrap().to_str().unwrap();
 
-        let dest_path = if let Some(out_dir) = &output_dir {
-            if out_dir == &args.input {
-                src_path.to_path_buf()
-            } else {
-                out_dir.join(file_name)
-            }
-        } else {
+        // Fixed: Now output_dir is &PathBuf, so direct == works (coerces via Deref)
+        let dest_path = if output_dir == &args.input {
             src_path.to_path_buf()
+        } else {
+            output_dir.join(file_name)
         };
 
         if args.dry_run {
@@ -99,7 +97,8 @@ fn main() -> Result<()> {
 
 fn process_image(src: &Path, dest: &Path, ext: &str) -> Result<()> {
     let img = ImageReader::open(src)?.decode()?;
-    let mut img = img.into_rgba8();  // Load pixels (strips metadata)
+    // Fixed: Remove unused mut (no mutations after into_rgba8)
+    let img = img.into_rgba8();  // Load pixels (strips metadata)
 
     match ext.to_lowercase().as_str() {
         "png" => img.save(dest).context("Failed to save PNG")?,
@@ -107,13 +106,6 @@ fn process_image(src: &Path, dest: &Path, ext: &str) -> Result<()> {
             .save(dest)
             .context("Failed to save JPEG")?,  // Use default quality (90)
         _ => anyhow::bail!("Unsupported extension: {}", ext),
-    }
-
-    // Overwrite if in-place
-    if src == dest {
-        // Already saved in place
-    } else {
-        // For output dir, we save to dest
     }
 
     Ok(())
