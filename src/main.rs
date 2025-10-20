@@ -42,7 +42,7 @@ fn main() -> Result<()> {
 
     let extensions: Vec<&str> = vec!["png", "jpg", "jpeg"];
     let mut processed = 0;
-    let mut skipped = 0;
+    let skipped = 0;
     let mut errors = 0;
 
     let walker = WalkDir::new(&args.input)
@@ -96,17 +96,10 @@ fn main() -> Result<()> {
 }
 
 fn process_image(src: &Path, dest: &Path, ext: &str) -> Result<()> {
-    let img = ImageReader::open(src)?.decode()?;
-    // Fixed: Remove unused mut (no mutations after into_rgba8)
-    let img = img.into_rgba8();  // Load pixels (strips metadata)
+    let img = ImageReader::open(src)?.decode()?;  // Pixels only, metadata zapped
 
-    match ext.to_lowercase().as_str() {
-        "png" => img.save(dest).context("Failed to save PNG")?,
-        "jpg" | "jpeg" => img
-            .save(dest)
-            .context("Failed to save JPEG")?,  // Use default quality (90)
-        _ => anyhow::bail!("Unsupported extension: {}", ext),
-    }
+    // One call: auto-format from dest.ext(), with sensible defaults
+    img.save(dest).with_context(|| format!("Failed to save {}", ext.to_uppercase()))?;
 
     Ok(())
 }
