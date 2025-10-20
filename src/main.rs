@@ -4,6 +4,7 @@ use image::ImageReader;  // Fixed: Use direct image::ImageReader (no io::Reader 
 use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
+use oxipng::{optimize_from_memory, Options};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Zap metadata from PNG/JPG images in a directory", long_about = None)]
@@ -23,6 +24,10 @@ struct Args {
     /// Dry run: show what would be done, no changes
     #[arg(short, long, default_value_t = false)]
     dry_run: bool,
+
+    /// Optimize PNGs post-zap (lossless compression, smaller files)
+    #[arg(short = 'z', long, default_value_t = false)]  // Fixed: -z, not -o
+    optimize: bool,
 }
 
 fn main() -> Result<()> {
@@ -74,7 +79,7 @@ fn main() -> Result<()> {
             continue;
         }
 
-        match process_image(src_path, &dest_path, ext) {
+        match process_image(src_path, &dest_path, ext, args.optimize) {
             Ok(_) => {
                 println!("Zapped: {} -> {}", src_path.display(), dest_path.display());
                 processed += 1;
@@ -95,11 +100,17 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn process_image(src: &Path, dest: &Path, ext: &str) -> Result<()> {
-    let img = ImageReader::open(src)?.decode()?;  // Pixels only, metadata zapped
-
-    // One call: auto-format from dest.ext(), with sensible defaults
+fn process_image(src: &Path, dest: &Path, ext: &str, optimize: bool) -> Result<()> {  // Pass optimize
+    let img = ImageReader::open(src)?.decode()?;
     img.save(dest).with_context(|| format!("Failed to save {}", ext.to_uppercase()))?;
 
+    if optimize && ext.to_lowercase() == "png" {
+        let data = fs::read(dest)?;
+        let opts = Options::from_preset(2);
+        let optimized = optimize_from_memory(&data, &opts)?;
+        fs::write(dest, &optimized)?;
+    }
     Ok(())
 }
+
+
