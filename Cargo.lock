@@ -695,6 +695,7 @@ dependencies = [
  "clap",
  "image",
  "oxipng",
+ "rayon",
  "walkdir",
 ]
 
