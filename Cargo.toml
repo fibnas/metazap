@@ -2,11 +2,20 @@
 name = "metazap"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.74"
+description = "CLI for zapping metadata from PNG/JPEG trees with optional oxipng optimization"
+license = "MIT"
+repository = "https://github.com/fibnas/metazap"
+homepage = "https://github.com/fibnas/metazap"
+documentation = "https://docs.rs/metazap"
+readme = "README.md"
+keywords = ["cli", "images", "metadata", "png", "jpeg"]
+categories = ["command-line-utilities", "multimedia::images"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
-image = "0.25"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 walkdir = "2.5"
-anyhow = "1.0"  
+anyhow = "1.0"
 oxipng = "9.0"
 rayon = "1.10"
