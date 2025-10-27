@@ -2,6 +2,10 @@
 
 Metazap is a small CLI tool for recursively stripping metadata from PNG and JPEG images. It optionally creates backups, performs dry runs, and can run [oxipng](https://github.com/shssoichiro/oxipng) for lossless PNG recompression after the metadata zap.
 
+[![Crates.io](https://img.shields.io/crates/v/md-echo.svg)](https://crates.io/crates/metazap)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Rust](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org)
+
 ## Features
 - Scan a directory tree (recursion can be disabled with `--no-recursive`).
 - Write back in-place or into a separate output directory.
