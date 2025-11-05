@@ -39,3 +39,4 @@ tests/tmp/
 **/mutants.out*/
 *.pdb
 
+Cargo.lock
